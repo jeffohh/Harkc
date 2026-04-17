@@ -1,0 +1,24 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "1.0",
+	"FriendlyName": "HierArc",
+	"Description": "Hierarchical State Machine",
+	"Category": "Other",
+	"CreatedBy": "jeffohh",
+	"CreatedByURL": "",
+	"DocsURL": "",
+	"MarketplaceURL": "",
+	"SupportURL": "",
+	"CanContainContent": true,
+	"IsBetaVersion": false,
+	"IsExperimentalVersion": false,
+	"Installed": false,
+	"Modules": [
+		{
+			"Name": "HierArc",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	]
+}
