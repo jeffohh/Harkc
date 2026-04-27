@@ -2,6 +2,7 @@
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
 #include "HierArcTypes.h"
+#include "HierArcBuilder.h"
 #include "HierArcMachine.generated.h"
 
 UCLASS(BlueprintType, Blueprintable)
@@ -10,10 +11,16 @@ class HIERARC_API UHierArcMachine : public UObject
     GENERATED_BODY()
 
 public:
-    // No UFUNCTION � FHierArcConfig is not a USTRUCT, UHT can't reflect it
-    void Configure(FHierArcConfig InConfig);
+    // Entry point — replaces NewObject + Configure
+    static UHierArcMachine* Create(UObject* Outer, FName MachineId);
 
-    void Start();
+    // Builder methods — each returns 'this' for chaining
+    UHierArcMachine* Initial(FName StateName);
+    UHierArcMachine* State(FName StateName, TFunction<void(FHierArcStateBuilder&)> BuildFn);
+
+    // Starts the machine and returns itself so you can chain Start() at the end
+    UHierArcMachine* Start();
+
     void Send(FName EventName);
 
     UFUNCTION(BlueprintCallable)

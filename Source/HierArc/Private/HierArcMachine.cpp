@@ -1,22 +1,39 @@
 #include "HierArcMachine.h"
 
-void UHierArcMachine::Configure(FHierArcConfig InConfig)
+UHierArcMachine* UHierArcMachine::Create(UObject* Outer, FName MachineId)
 {
-    Config = MoveTemp(InConfig);
+    UHierArcMachine* Machine = NewObject<UHierArcMachine>(Outer);
+    Machine->Config.Id = MachineId;
+    return Machine;
 }
 
-void UHierArcMachine::Start()
+UHierArcMachine* UHierArcMachine::Initial(FName StateName)
 {
-    if (bRunning) return;
+    Config.InitialState = StateName;
+    return this;
+}
+
+UHierArcMachine* UHierArcMachine::State(FName StateName, TFunction<void(FHierArcStateBuilder&)> BuildFn)
+{
+    TSharedPtr<FHierArcState> NewState = MakeShared<FHierArcState>();
+    FHierArcStateBuilder Builder(*NewState);
+    BuildFn(Builder);
+    Config.States.Add(StateName, NewState);
+    return this;
+}
+
+UHierArcMachine* UHierArcMachine::Start()
+{
+    if (bRunning) return this;
     bRunning = true;
 
-    Context.Send = [this](FName EventName) { Send(EventName); };
+    Context.Send = [this](FName EventName){ Send(EventName); };
 
     TSharedPtr<FHierArcState> Initial = ResolveState(Config.InitialState);
     if (!Initial.IsValid())
     {
         UE_LOG(LogTemp, Error, TEXT("HierArc: Initial state '%s' not found."), *Config.InitialState.ToString());
-        return;
+        return this;
     }
 
     EnterState(Config.InitialState, *Initial);
@@ -35,6 +52,8 @@ void UHierArcMachine::Start()
         ActiveStateStack.Add(Current->InitialChildState);
         Current = Child->Get();
     }
+
+    return this;
 }
 
 void UHierArcMachine::Send(FName EventName)
@@ -49,7 +68,6 @@ void UHierArcMachine::Send(FName EventName)
         FName* TargetName = State->Events.Find(EventName);
         if (!TargetName) continue;
 
-        // Exit all active states from leaf down to the handler
         for (int32 j = ActiveStateStack.Num() - 1; j >= i; j--)
         {
             TSharedPtr<FHierArcState> Exiting = ResolveState(ActiveStateStack[j]);
@@ -57,7 +75,6 @@ void UHierArcMachine::Send(FName EventName)
         }
         ActiveStateStack.SetNum(i);
 
-        // Enter target, drilling into compound children
         TSharedPtr<FHierArcState> Target = ResolveState(*TargetName);
         if (Target.IsValid())
         {
