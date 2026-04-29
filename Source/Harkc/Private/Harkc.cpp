@@ -1,15 +1,15 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
-#include "HierArc.h"
+#include "Harkc.h"
 
-#define LOCTEXT_NAMESPACE "FHierArcModule"
+#define LOCTEXT_NAMESPACE "FHarkcModule"
 
-void FHierArcModule::StartupModule()
+void FHarkcModule::StartupModule()
 {
 	// This code will execute after your module is loaded into memory; the exact timing is specified in the .uplugin file per-module
 }
 
-void FHierArcModule::ShutdownModule()
+void FHarkcModule::ShutdownModule()
 {
 	// This function may be called during shutdown to clean up your module.  For modules that support dynamic reloading,
 	// we call this function before unloading the module.
@@ -17,4 +17,4 @@ void FHierArcModule::ShutdownModule()
 
 #undef LOCTEXT_NAMESPACE
 	
-IMPLEMENT_MODULE(FHierArcModule, HierArc)
+IMPLEMENT_MODULE(FHarkcModule, Harkc)

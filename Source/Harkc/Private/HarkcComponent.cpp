@@ -1,0 +1,32 @@
+#include "HarkcComponent.h"
+
+UHarkcComponent::UHarkcComponent()
+{
+    PrimaryComponentTick.bCanEverTick = false;
+}
+
+void UHarkcComponent::BeginPlay()
+{
+    Super::BeginPlay();
+
+    // Build and start the machine defined by the subclass
+    Machine = BuildMachine();
+
+    if (!Machine)
+        UE_LOG(LogTemp, Error, TEXT("Harkc: %s did not return a machine from BuildMachine()."), *GetName());
+}
+
+void UHarkcComponent::Send(FName EventName)
+{
+    if (Machine)
+        Machine->Send(EventName);
+    else
+        UE_LOG(LogTemp, Warning, TEXT("Harkc: Send('%s') called but no machine is set."), *EventName.ToString());
+}
+
+FName UHarkcComponent::GetCurrentState() const
+{
+    if (Machine)
+        return Machine->GetCurrentState();
+    return NAME_None;
+}

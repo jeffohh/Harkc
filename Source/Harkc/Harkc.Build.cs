@@ -2,9 +2,9 @@
 
 using UnrealBuildTool;
 
-public class HierArc : ModuleRules
+public class Harkc : ModuleRules
 {
-	public HierArc(ReadOnlyTargetRules Target) : base(Target)
+	public Harkc(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 		

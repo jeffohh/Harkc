@@ -2,7 +2,7 @@
 	"FileVersion": 3,
 	"Version": 1,
 	"VersionName": "1.0",
-	"FriendlyName": "HierArc",
+	"FriendlyName": "Harkc",
 	"Description": "Hierarchical State Machine",
 	"Category": "Other",
 	"CreatedBy": "jeffohh",
@@ -16,7 +16,7 @@
 	"Installed": false,
 	"Modules": [
 		{
-			"Name": "HierArc",
+			"Name": "Harkc",
 			"Type": "Runtime",
 			"LoadingPhase": "Default"
 		}

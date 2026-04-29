@@ -1,51 +1,51 @@
 #pragma once
 #include "CoreMinimal.h"
-#include "HierArcTypes.h"
+#include "HarkcTypes.h"
 
 // Passed into the lambda for each State() call
-class HIERARC_API FHierArcStateBuilder
+class HARKC_API FHarkcStateBuilder
 {
 public:
-    FHierArcStateBuilder(FHierArcState& InState) : State(InState) {}
+    FHarkcStateBuilder(FHarkcState& InState) : State(InState) {}
 
     // Set OnEntry callback
-    FHierArcStateBuilder& OnEntry(TFunction<void(FHierArcContext&)> Callback)
+    FHarkcStateBuilder& OnEntry(TFunction<void(FHarkcContext&)> Callback)
     {
         State.OnEntry = MoveTemp(Callback);
         return *this;
     }
 
     // Set OnExit callback
-    FHierArcStateBuilder& OnExit(TFunction<void(FHierArcContext&)> Callback)
+    FHarkcStateBuilder& OnExit(TFunction<void(FHarkcContext&)> Callback)
     {
         State.OnExit = MoveTemp(Callback);
         return *this;
     }
 
     // Register an event -> target transition
-    FHierArcStateBuilder& On(FName EventName, FName TargetState)
+    FHarkcStateBuilder& On(FName EventName, FName TargetState)
     {
         State.Events.Add(EventName, TargetState);
         return *this;
     }
 
     // Define a nested child state (for compound states)
-    FHierArcStateBuilder& State(FName StateName, TFunction<void(FHierArcStateBuilder&)> BuildFn)
+    FHarkcStateBuilder& State(FName StateName, TFunction<void(FHarkcStateBuilder&)> BuildFn)
     {
-        TSharedPtr<FHierArcState> Child = MakeShared<FHierArcState>();
-        FHierArcStateBuilder ChildBuilder(*Child);
+        TSharedPtr<FHarkcState> Child = MakeShared<FHarkcState>();
+        FHarkcStateBuilder ChildBuilder(*Child);
         BuildFn(ChildBuilder);
         this->State.States.Add(StateName, Child);
         return *this;
     }
 
     // Set the initial child state (for compound states)
-    FHierArcStateBuilder& Initial(FName StateName)
+    FHarkcStateBuilder& Initial(FName StateName)
     {
         State.InitialChildState = StateName;
         return *this;
     }
 
 private:
-    FHierArcState& State;
+    FHarkcState& State;
 };

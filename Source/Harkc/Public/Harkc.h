@@ -4,7 +4,7 @@
 
 #include "Modules/ModuleManager.h"
 
-class FHierArcModule : public IModuleInterface
+class FHarkcModule : public IModuleInterface
 {
 public:
 
