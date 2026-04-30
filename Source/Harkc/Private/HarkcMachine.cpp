@@ -65,9 +65,25 @@ void UHarkcMachine::Send(FName EventName)
         TSharedPtr<FHarkcState> State = ResolveState(ActiveStateStack[i]);
         if (!State.IsValid()) continue;
 
-        FName* TargetName = State->Events.Find(EventName);
-        if (!TargetName) continue;
+        FHarkcTransition* Transition = State->Events.Find(EventName);
+        if (!Transition) continue;
 
+        // All guards must pass — a single failure blocks the transition.
+        // Unlike a missing handler, a failed guard is intentional, so we
+        // stop bubbling rather than trying parent states.
+        bool bGuardsPassed = true;
+        for (auto& Guard : Transition->Guards)
+        {
+            if (!Guard(Context))
+            {
+                bGuardsPassed = false;
+                break;
+            }
+        }
+
+        if (!bGuardsPassed) return;
+
+        // Exit from leaf down to and including the handling state
         for (int32 j = ActiveStateStack.Num() - 1; j >= i; j--)
         {
             TSharedPtr<FHarkcState> Exiting = ResolveState(ActiveStateStack[j]);
@@ -75,11 +91,17 @@ void UHarkcMachine::Send(FName EventName)
         }
         ActiveStateStack.SetNum(i);
 
-        TSharedPtr<FHarkcState> Target = ResolveState(*TargetName);
+        // All actions fire in order, between exit and entry
+        for (auto& Action : Transition->Actions)
+        {
+            Action(Context);
+        }
+
+        TSharedPtr<FHarkcState> Target = ResolveState(Transition->TargetState);
         if (Target.IsValid())
         {
-            EnterState(*TargetName, *Target);
-            ActiveStateStack.Add(*TargetName);
+            EnterState(Transition->TargetState, *Target);
+            ActiveStateStack.Add(Transition->TargetState);
 
             FHarkcState* Current = Target.Get();
             while (Current->IsCompound())
@@ -94,7 +116,8 @@ void UHarkcMachine::Send(FName EventName)
         return;
     }
 
-    UE_LOG(LogTemp, Warning, TEXT("Harkc: No handler for event '%s' in current state stack."), *EventName.ToString());
+    UE_LOG(LogTemp, Warning, TEXT("Harkc: No handler for event '%s' in current state stack."),
+        *EventName.ToString());
 }
 
 FName UHarkcMachine::GetCurrentState() const

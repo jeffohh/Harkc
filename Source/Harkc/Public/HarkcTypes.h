@@ -3,7 +3,13 @@
 
 struct FHarkcContext;
 
-// No HARKC_API – struct is header-only, inlined by includers
+struct FHarkcTransition
+{
+    FName TargetState;
+    TArray<TFunction<bool(FHarkcContext&)>> Guards;
+    TArray<TFunction<void(FHarkcContext&)>> Actions;
+};
+
 struct FHarkcState
 {
     FName InitialChildState;
@@ -11,7 +17,7 @@ struct FHarkcState
     TFunction<void(FHarkcContext&)> OnEntry;
     TFunction<void(FHarkcContext&)> OnExit;
 
-    TMap<FName, FName> Events;
+    TMap<FName, FHarkcTransition> Events;
     TMap<FName, TSharedPtr<FHarkcState>> States;
 
     bool IsCompound() const { return States.Num() > 0; }

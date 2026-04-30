@@ -2,50 +2,115 @@
 #include "CoreMinimal.h"
 #include "HarkcTypes.h"
 
-// Passed into the lambda for each State() call
+class FHarkcStateBuilder;
+
+// [=== TRANSITION BUILDER ===]
+class HARKC_API FHarkcTransitionBuilder
+{
+    friend class FHarkcStateBuilder;
+
+public:
+    FHarkcTransitionBuilder(FHarkcTransition& InTransition, FHarkcStateBuilder& InStateBuilder)
+        : TransitionRef(&InTransition), StateBuilder(InStateBuilder) {}
+
+    FHarkcTransitionBuilder& Guard(TFunction<bool(FHarkcContext&)> Fn)
+    {
+        TransitionRef->Guards.Add(MoveTemp(Fn));
+        return *this;
+    }
+
+    FHarkcTransitionBuilder& Action(TFunction<void(FHarkcContext&)> Fn)
+    {
+        TransitionRef->Actions.Add(MoveTemp(Fn));
+        return *this;
+    }
+
+    // Forwarding declarations only — defined after FHarkcStateBuilder
+    FHarkcTransitionBuilder& On(FName EventName, FName TargetState);
+    FHarkcTransitionBuilder& OnEntry(TFunction<void(FHarkcContext&)> Callback);
+    FHarkcTransitionBuilder& OnExit(TFunction<void(FHarkcContext&)> Callback);
+    FHarkcTransitionBuilder& State(FName StateName, TFunction<void(FHarkcStateBuilder&)> BuildFn);
+    FHarkcTransitionBuilder& Initial(FName StateName);
+
+private:
+    FHarkcTransition* TransitionRef;
+    FHarkcStateBuilder& StateBuilder;
+};
+
+// [=== STATE BUILDER ===]
 class HARKC_API FHarkcStateBuilder
 {
-public:
-    FHarkcStateBuilder(FHarkcState& InState) : State(InState) {}
+    friend class FHarkcTransitionBuilder;
 
-    // Set OnEntry callback
+public:
+    FHarkcStateBuilder(FHarkcState& InState) : StateRef(InState) {}
+
     FHarkcStateBuilder& OnEntry(TFunction<void(FHarkcContext&)> Callback)
     {
-        State.OnEntry = MoveTemp(Callback);
+        StateRef.OnEntry = MoveTemp(Callback);
         return *this;
     }
 
-    // Set OnExit callback
     FHarkcStateBuilder& OnExit(TFunction<void(FHarkcContext&)> Callback)
     {
-        State.OnExit = MoveTemp(Callback);
+        StateRef.OnExit = MoveTemp(Callback);
         return *this;
     }
 
-    // Register an event -> target transition
-    FHarkcStateBuilder& On(FName EventName, FName TargetState)
+    FHarkcTransitionBuilder On(FName EventName, FName TargetState)
     {
-        State.Events.Add(EventName, TargetState);
-        return *this;
+        FHarkcTransition& T = StateRef.Events.Add(EventName, FHarkcTransition{ TargetState });
+        return FHarkcTransitionBuilder(T, *this);
     }
 
-    // Define a nested child state (for compound states)
     FHarkcStateBuilder& State(FName StateName, TFunction<void(FHarkcStateBuilder&)> BuildFn)
     {
         TSharedPtr<FHarkcState> Child = MakeShared<FHarkcState>();
         FHarkcStateBuilder ChildBuilder(*Child);
         BuildFn(ChildBuilder);
-        this->State.States.Add(StateName, Child);
+        StateRef.States.Add(StateName, Child);
         return *this;
     }
 
-    // Set the initial child state (for compound states)
     FHarkcStateBuilder& Initial(FName StateName)
     {
-        State.InitialChildState = StateName;
+        StateRef.InitialChildState = StateName;
         return *this;
     }
 
 private:
-    FHarkcState& State;
+    FHarkcState& StateRef;
 };
+
+
+// --- Transition Builder Method Definitions ---
+inline FHarkcTransitionBuilder& FHarkcTransitionBuilder::On(FName EventName, FName TargetState)
+{
+    FHarkcTransition& T = StateBuilder.StateRef.Events.Add(EventName, FHarkcTransition{ TargetState });
+    TransitionRef = &T;
+    return *this;
+}
+
+inline FHarkcTransitionBuilder& FHarkcTransitionBuilder::OnEntry(TFunction<void(FHarkcContext&)> Callback)
+{
+    StateBuilder.OnEntry(MoveTemp(Callback));
+    return *this;
+}
+
+inline FHarkcTransitionBuilder& FHarkcTransitionBuilder::OnExit(TFunction<void(FHarkcContext&)> Callback)
+{
+    StateBuilder.OnExit(MoveTemp(Callback));
+    return *this;
+}
+
+inline FHarkcTransitionBuilder& FHarkcTransitionBuilder::State(FName StateName, TFunction<void(FHarkcStateBuilder&)> BuildFn)
+{
+    StateBuilder.State(StateName, MoveTemp(BuildFn));
+    return *this;
+}
+
+inline FHarkcTransitionBuilder& FHarkcTransitionBuilder::Initial(FName StateName)
+{
+    StateBuilder.Initial(StateName);
+    return *this;
+}
