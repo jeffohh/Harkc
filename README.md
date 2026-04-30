@@ -82,3 +82,47 @@ States can contain child states, forming a hierarchy.
 - Call `Start()` on `BeginPlay` (or the equivalant)
 - Call `Send(...)` in response to a gameplay event
 
+## Advanced Example
+```cpp
+float stamina = 10.0f;
+
+UHarkcMachine* Machine = UHarkcMachine::Create(this, "Combat")
+    ->Initial("Idle")
+    ->State("Idle", [](FHarkcStateBuilder& S)
+    {
+        S.OnExit([](FHarkcContext& C) // runs when leaving the "Idle" state
+        {
+            UE_LOG(LogTemp, Warning, TEXT("Exiting Idle state"));
+        });
+
+        S.On("Attack", "Attacking") // "transition" mapping where event "Attack" leads to state "Attacking"
+            .Guard([](FHarkcContext& C)
+            {
+                return stamina > 0.0f; // "guard" stamina must be non-zero
+            })
+            .Action([](FHarkcContext& C)
+            {
+                stamina -= 5.0f; // "action" stamina decreases by attacking
+            });
+    })
+    ->State("Attacking", [](FHarkcStateBuilder& S)
+    {
+        S.OnEntry([this](FHarkcContext& C) // runs when "Attacking" is entered
+        {
+            GetWorld()->GetTimerManager().SetTimer(
+                TimerHandle,
+                [this, &C]()
+                {
+                    C.Send("Finish"); // send the state back to idle
+                },
+                2.0f, // after 2 seconds, run the lambda above
+                false
+            );
+        });
+
+        S.On("Finish", "Idle");
+    });
+    
+Machine->Start(); // starts the machine
+Machine->Send("Attack"); // sends an event
+```
