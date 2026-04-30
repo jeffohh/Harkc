@@ -1,14 +1,14 @@
 ## Concept
 Harkc is a lightweight hierarchical state machine plugin for Unreal Engine that allows you to define state-driven logic using a fluent builder API. It is designed to simplify gameplay, UI, and system logic by replacing scattered conditionals with structured states and transitions.
 
-### Installation
+## Installation
 Note: Harkc requires C++ integration in your project to use.
 
 1. Clone or download the repository.
 2. Place the folder inside `<UnrealProject>/Plugins`.
 3. Build the plugin through Visual Studio or by opening the project.
 
-### Quick Start
+## Quick Start
 To create and run a simple state machine:
 ```cpp
 UHarkcMachine* Machine = UHarkcMachine::Create(this, "Example")
@@ -36,8 +36,7 @@ Machine->Send("Move");
 
 This transitions the machine from `Idle` -> `Running`.
 
-### Core Usage
-## 🧠 Core Usage
+## Core Usage
 
 | Concept | Description |
 |--------|------------|
@@ -48,15 +47,15 @@ This transitions the machine from `Idle` -> `Running`.
 | Start Machine | `->Start()` – begins execution |
 | Send Event | `Machine->Send(Event)` – triggers transitions |
 
-### Features
-#### OnEntry / OnExit
+## Features
+### OnEntry / OnExit
 ```cpp
 S.OnEntry([](FHarkcContext& C) { ... });
 S.OnExit([](FHarkcContext& C) { ... });
 ```
 Runs when entering or exiting a state.
 
-#### Guards and Actions
+### Guards and Actions
 ```cpp
 S.On("Attack", "Attacking")
  .Guard([](FHarkcContext& C) { return true; })
@@ -65,7 +64,7 @@ S.On("Attack", "Attacking")
 - Guards must pass for the transition to occur
 - Actions run during the transition
 
-#### Nested (Hierarchical) States
+### Nested (Hierarchical) States
 ```cpp
 S.State("Menu", [](FHarkcStateBuilder& S)
 {
@@ -77,7 +76,7 @@ S.State("Menu", [](FHarkcStateBuilder& S)
 ```
 States can contain child states, forming a hierarchy.
 
-### Typical Workflow
+## Typical Workflow
 - Create a C++ class that makes the machine in an Actor, Component, or Widget
 - Build the machine using Harkc's Builder API
 - Call `Start()` on `BeginPlay` (or the equivalant)
