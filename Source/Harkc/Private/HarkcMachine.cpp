@@ -68,34 +68,30 @@ void UHarkcMachine::Send(FName EventName)
         FHarkcTransition* Transition = State->Events.Find(EventName);
         if (!Transition) continue;
 
-        // All guards must pass — a single failure blocks the transition.
-        // Unlike a missing handler, a failed guard is intentional, so we
-        // stop bubbling rather than trying parent states.
-        bool bGuardsPassed = true;
-        for (auto& Guard : Transition->Guards)
+        // Find how deep the target lives — if it's a child of a state
+        // already on the stack, only exit states below that ancestor
+        int32 ExitFrom = i;
+        for (int32 k = 0; k < ActiveStateStack.Num(); k++)
         {
-            if (!Guard(Context))
+            TSharedPtr<FHarkcState> Ancestor = ResolveState(ActiveStateStack[k]);
+            if (Ancestor.IsValid() && Ancestor->States.Contains(Transition->TargetState))
             {
-                bGuardsPassed = false;
+                ExitFrom = k + 1; // keep the ancestor, exit everything below it
                 break;
             }
         }
 
-        if (!bGuardsPassed) return;
-
-        // Exit from leaf down to and including the handling state
-        for (int32 j = ActiveStateStack.Num() - 1; j >= i; j--)
+        // Exit from leaf down to ExitFrom
+        for (int32 j = ActiveStateStack.Num() - 1; j >= ExitFrom; j--)
         {
             TSharedPtr<FHarkcState> Exiting = ResolveState(ActiveStateStack[j]);
             if (Exiting.IsValid()) ExitState(ActiveStateStack[j], *Exiting);
         }
-        ActiveStateStack.SetNum(i);
+        ActiveStateStack.SetNum(ExitFrom);
 
         // All actions fire in order, between exit and entry
         for (auto& Action : Transition->Actions)
-        {
             Action(Context);
-        }
 
         TSharedPtr<FHarkcState> Target = ResolveState(Transition->TargetState);
         if (Target.IsValid())
